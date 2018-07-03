@@ -14,7 +14,7 @@
 
 from util import manhattanDistance
 from game import Directions
-import random, util
+import random, util, searchAgents
 
 from game import Agent
 
@@ -82,12 +82,12 @@ class ReflexAgent(Agent):
             if newScaredTimes[i] == 0 and manhattanDistance(newGhostPos[i], newPos) <= 1:
                 score -= 1000
 
-        score += 100/findClosestFood(currentGameState.getFood(), newPos)
+        score += 100/findClosestFood(currentGameState, newPos)
         return score
 
-def findClosestFood(food, pac):
+def findClosestFood(currentGameState, pac):
     dis = 100000
-    for pos in food.asList():
+    for pos in currentGameState.getFood().asList():
         temp = manhattanDistance(pos, pac)
         if temp < dis:
             dis = temp
@@ -250,7 +250,32 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalMoves = gameState.getLegalActions()
+        scores = [self.expectimax(gameState.generateSuccessor(0, action),
+                               self.depth, 1, gameState.getNumAgents()) for action in legalMoves]
+
+        bestScore = max(scores)
+        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
+        return legalMoves[random.choice(bestIndices)]
+
+    def expectimax(self, gameState, depth, agentIndex, agentTotal):
+
+        if depth == 0 or gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+
+        legalMoves = gameState.getLegalActions(agentIndex)
+        if agentIndex == 0:
+            return max([self.expectimax(gameState.generateSuccessor(0, action),
+                    depth, agentIndex + 1, agentTotal) for action in legalMoves])
+        elif agentIndex == agentTotal - 1:
+            scores = [self.expectimax(gameState.generateSuccessor(agentIndex, action),
+                    depth - 1, 0, agentTotal) for action in legalMoves]
+            return sum(scores)/float(len(scores))
+        else:
+            scores = [self.expectimax(gameState.generateSuccessor(agentIndex, action),
+                    depth, agentIndex + 1, agentTotal) for action in legalMoves]
+            return sum(scores)/float(len(scores))
+
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -260,7 +285,47 @@ def betterEvaluationFunction(currentGameState):
       DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    pos = currentGameState.getPacmanPosition()
+    ghostStates = currentGameState.getGhostStates()
+    numFood = currentGameState.getNumFood()
+    allFood = currentGameState.getFood()
+    allWall = currentGameState.getWalls()
+    allCap = currentGameState.getCapsules()
+    score = 0
+
+    for cap in allCap:
+        if manhattanDistance(cap, pos) == 0:
+            score += 200
+
+    if numFood == 0:
+        score += 10000
+    else:
+        score += 1000/numFood
+        # score += 1000/closestFood(currentGameState, pos)
+
+    # for i in range(0, len(ghostStates)):
+        if ghostStates[0].scaredTimer == 0:
+            ghostPos = currentGameState.getGhostPosition(1)
+            if manhattanDistance(ghostPos, pos) == 0:
+                score -= 10001
+            else:
+                score += 0.001*searchAgents.mazeDistance(util.nearestPoint(ghostPos),
+                                                          pos, currentGameState)
+
+    return score + currentGameState.getScore()
+
+def closestFood(currentGameState, pos):
+    dis = float("inf")
+    for x in currentGameState.getFood().asList():
+        temp = searchAgents.mazeDistance(x, pos, currentGameState)
+        dis = min(dis, temp)
+        if dis == 0:
+            return 0.5
+
+    return dis
+
+
+
 
 # Abbreviation
 better = betterEvaluationFunction
