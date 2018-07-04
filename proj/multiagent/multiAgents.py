@@ -14,7 +14,7 @@
 
 from util import manhattanDistance
 from game import Directions
-import random, util, searchAgents
+import random, util
 
 from game import Agent
 
@@ -288,41 +288,36 @@ def betterEvaluationFunction(currentGameState):
     pos = currentGameState.getPacmanPosition()
     ghostStates = currentGameState.getGhostStates()
     numFood = currentGameState.getNumFood()
-    allFood = currentGameState.getFood()
-    allWall = currentGameState.getWalls()
     allCap = currentGameState.getCapsules()
     score = 0
+    foodNumWeight = -1000.0
+    foodDisWeight = -50.0
 
-    for cap in allCap:
-        if manhattanDistance(cap, pos) == 0:
-            score += 200
+    if currentGameState.isWin():
+        return float("inf")
+    if currentGameState.isLose():
+        return float("-inf")
 
-    if numFood == 0:
-        score += 10000
-    else:
-        score += 1000/numFood
-        # score += 1000/closestFood(currentGameState, pos)
+    # score += foodNumWeight*numFood + foodDisWeight*closestFood(currentGameState, pos)
+    score += foodNumWeight * numFood + foodDisWeight * findClosestFood(currentGameState, pos)
+    score += -1000.0*len(allCap)
 
-    # for i in range(0, len(ghostStates)):
-        if ghostStates[0].scaredTimer == 0:
-            ghostPos = currentGameState.getGhostPosition(1)
-            if manhattanDistance(ghostPos, pos) == 0:
-                score -= 10001
-            else:
-                score += 0.001*searchAgents.mazeDistance(util.nearestPoint(ghostPos),
-                                                          pos, currentGameState)
+    if ghostStates[0].scaredTimer != 0:
+        ghostPos = currentGameState.getGhostPosition(1)
+        if manhattanDistance(ghostPos, pos) == 0:
+            score += 20000.0
 
-    return score + currentGameState.getScore()
+    return score
 
-def closestFood(currentGameState, pos):
-    dis = float("inf")
-    for x in currentGameState.getFood().asList():
-        temp = searchAgents.mazeDistance(x, pos, currentGameState)
-        dis = min(dis, temp)
-        if dis == 0:
-            return 0.5
-
-    return dis
+# def closestFood(currentGameState, pos):
+#     dis = float("inf")
+#     for x in currentGameState.getFood().asList():
+#         temp = searchAgents.mazeDistance(x, pos, currentGameState)
+#         dis = min(dis, temp)
+#         if dis == 0:
+#             return 0.5
+#
+#     return dis
 
 
 
