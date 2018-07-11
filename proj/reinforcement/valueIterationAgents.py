@@ -59,7 +59,6 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter()  # A Counter is a dict with default 0
-        self.actions = util.Counter()
         self.runValueIteration()
 
     def runValueIteration(self):
@@ -68,16 +67,12 @@ class ValueIterationAgent(ValueEstimationAgent):
         for i in range(self.iterations):
             vdict = util.Counter()
             for state in self.mdp.getStates():
-                if self.mdp.isTerminal(state):
-                    vdict[state] = 0
-                else:
+                v = self.getValue(state)
+                if not self.mdp.isTerminal(state):
                     v = float("-inf")
                     for action in self.mdp.getPossibleActions(state):
-                        qtemp = self.computeQValueFromValues(state, action)
-                        if v < qtemp:
-                            v = qtemp
-                            vdict[state] = qtemp
-                            self.actions[state] = action
+                        v = max(v, self.computeQValueFromValues(state, action))
+                vdict[state] = v
             self.values = vdict
 
     def getValue(self, state):
@@ -107,11 +102,10 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        action = self.actions[state]
-        if action == 0:
+        actions = self.mdp.getPossibleActions(state)
+        if len(actions) == 0:
             return None
-        else:
-            return self.actions[state]
+        return max(actions, key=lambda action: self.computeQValueFromValues(state, action))
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
@@ -154,6 +148,18 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        i = 0
+        while i < self.iterations:
+            for state in self.mdp.getStates():
+                if i == self.iterations:
+                    break
+                i += 1
+                v = self.getValue(state)
+                if not self.mdp.isTerminal(state):
+                    v = float("-inf")
+                    for action in self.mdp.getPossibleActions(state):
+                        v = max(v, self.computeQValueFromValues(state, action))
+                self.values[state] = v
 
 
 class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
@@ -176,3 +182,39 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        pred = dict()
+        for state in self.mdp.getStates():
+            for action in self.mdp.getPossibleActions(state):
+                for a in self.mdp.getTransitionStatesAndProbs(state, action):
+                    nexts = a[0]
+                    if nexts in pred:
+                        pred[nexts].add(state)
+                    else:
+                        pred[nexts] = {state}
+
+        minpq = util.PriorityQueue()
+        for state in self.mdp.getStates():
+            if not self.mdp.isTerminal(state):
+                maxQ = float('-inf')
+                for action in self.mdp.getPossibleActions(state):
+                    maxQ = max(maxQ, self.computeQValueFromValues(state, action))
+                diff = abs(self.values[state] - maxQ)
+                minpq.push(state, -diff)
+
+        i = 0
+        while ((not minpq.isEmpty()) and (i != self.iterations)):
+            currs = minpq.pop()
+            if not self.mdp.isTerminal(currs):
+                curr = float('-inf')
+                for action in self.mdp.getPossibleActions(currs):
+                    curr = max(curr, self.computeQValueFromValues(currs, action))
+                self.values[currs] = curr
+
+            for pres in pred[currs]:
+                maxQ = float('-inf')
+                for action in self.mdp.getPossibleActions(pres):
+                    maxQ = max(maxQ, self.computeQValueFromValues(pres, action))
+                diff = abs(self.values[pres] - maxQ)
+                if diff > self.theta:
+                    minpq.update(pres, -diff)
+            i += 1
