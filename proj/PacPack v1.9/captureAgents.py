@@ -10,7 +10,7 @@
   Interfaces for capture agents and agent factories
 """
 
-from game import Agent, random
+from game import Agent
 import distanceCalculator
 from util import nearestPoint
 import util

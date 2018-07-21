@@ -766,15 +766,13 @@ def runGames( layout, agents, display, length, numGames, record, numTraining, pa
         f.write(g.record)
 
   if numGames > 1:
-    # TODO: Fix below, as ghosts can't win
     scores = [game.state.data.score for game in games]
+    times = [game.length - game.state.data.timeleft for game in games]
     pacmanWinRate = [s > 0 for s in scores].count(True)/ float(len(scores))
-    ghostWinRate = [s < 0 for s in scores].count(True)/ float(len(scores))
+    print 'Times:', times
     print 'Average Score:', sum(scores) / float(len(scores))
     print 'Scores:       ', ', '.join([str(score) for score in scores])
     print 'Pacman Win Rate:  %d/%d (%.2f)' % ([s > 0 for s in scores].count(True), len(scores), pacmanWinRate)
-    print 'Ghost Win Rate: %d/%d (%.2f)' % ([s < 0 for s in scores].count(True), len(scores), ghostWinRate)
-    print 'Record:       ', ', '.join([('Ghost', 'Tie', 'Pacman')[max(0, min(2, 1 + s))] for s in scores])
   return games
 
 def save_score(game, pacmanTeamName):

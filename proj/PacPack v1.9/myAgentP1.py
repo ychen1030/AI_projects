@@ -27,10 +27,7 @@ from util import nearestPoint
 
 class myAgentP1(CaptureAgent):
   """
-  Students' Names: Yingying Chen, Chen Chen
-  Phase Number: 1
-  Description of Bot: (a DETAILED description of your bot
-  and it's strategy including any algorithms, heuristics, etc...)
+  YOUR DESCRIPTION HERE
   """
 
   def registerInitialState(self, gameState):
@@ -66,7 +63,6 @@ class myAgentP1(CaptureAgent):
     # print 'eval time for agent %d: %.4f' % (self.index, time.time() - start)
 
     # INSERT YOUR LOGIC HERE
-    
 
     return random.choice(actions)
 
@@ -111,9 +107,15 @@ class myAgentP1(CaptureAgent):
     features['successorScore'] = self.getScore(successorGameState)
 
     # CHANGE YOUR FEATURES HERE
-
+    features['closestFood'] = closestFood
+    features['hasFood'] = gameState.hasFood(newPos[0], newPos[1])
+    features['teammateDistance'] = teammateDistance
+    features['stop'] = 1 if action == Directions.STOP else 0
     return features
 
   def getWeights(self, gameState, action):
     # CHANGE YOUR WEIGHTS HERE
-    return {'successorScore': 100}
+    return {'closestFood': -500,
+            'hasFood': 500000,
+            'teammateDistance': 250,
+            'stop': -1000}

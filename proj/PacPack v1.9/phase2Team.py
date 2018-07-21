@@ -1,4 +1,4 @@
-# phase1Team.py
+# phase2Team.py
 # ---------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -12,8 +12,8 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from p1StaffBot import PickyStaffAgent
-from myAgentP1 import myAgentP1
+from p2StaffBot import PlannedStaffAgent
+from myAgentP2 import myAgentP2
 import random, time, util
 from game import Directions
 import game
@@ -23,7 +23,7 @@ import game
 #################
 
 def createTeam(firstIndex, secondIndex, isPacman,
-               first = 'PickyStaffAgent', second = 'myAgentP1'):
+               first = 'PlannedStaffAgent', second = 'myAgentP2', numTraining=0):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent

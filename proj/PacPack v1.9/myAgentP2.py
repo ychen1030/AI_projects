@@ -15,6 +15,7 @@
 
 
 from captureAgents import CaptureAgent
+from myAgentP1 import myAgentP1
 import random, time, util
 from game import Directions
 import game
@@ -25,7 +26,7 @@ from util import nearestPoint
 #########
 
 
-class myAgentP2(CaptureAgent):
+class myAgentP2(myAgentP1):
   """
   YOUR DESCRIPTION HERE
   """
@@ -55,16 +56,40 @@ class myAgentP2(CaptureAgent):
     teammateIndices = [index for index in self.getTeam(gameState) if index != self.index]
     assert len(teammateIndices) == 1
     teammateIndex = teammateIndices[0]
-    otherAgentPositions = getFuturePositions(gameState, otherAgentActions, teammateIndex)
+    self.otherAgentPositions = getFuturePositions(gameState, otherAgentActions, teammateIndex)
     
     # You can process the broadcast here!
 
-  def chooseAction(self, gameState):
-    """
-    Picks among actions randomly.
-    """
-    actions = gameState.getLegalActions(self.index)
-    return random.choice(actions)
+  def getFeatures(self, gameState, action):
+    features = util.Counter()
+
+    successorGameState = gameState.generateSuccessor(self.index, action)
+    newPos = successorGameState.getAgentPosition(self.index)
+    oldFood = gameState.getFood()
+
+    foodPositions = oldFood.asList()
+    newFoodPositions = []
+    for pos in foodPositions:
+      if pos not in self.otherAgentPositions:
+        newFoodPositions.append(pos)
+
+    if len(newFoodPositions) == 0:
+      foodDistances = [self.getMazeDistance(newPos, foodPosition) for foodPosition in foodPositions]
+    else:
+      foodDistances = [self.getMazeDistance(newPos, foodPosition) for foodPosition in newFoodPositions]
+    closestFood = min(foodDistances) + 1.0
+
+    features['closestFood'] = closestFood
+    features['hasFood'] = gameState.hasFood(newPos[0], newPos[1]) and pos not in self.otherAgentPositions
+    features['stop'] = 1 if action == Directions.STOP else 0
+    return features
+
+  def getWeights(self, gameState, action):
+    # CHANGE YOUR WEIGHTS HERE
+    return {'numRepeats': 0,
+            'closestFood': -500,
+            'hasFood': 500000,
+            'stop': -1000}
 
 
 def getFuturePositions(gameState, plannedActions, agentIndex):

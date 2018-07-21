@@ -453,6 +453,7 @@ class AgentRules:
           if state.isOnPacmanTeam(agentIndex):
             score = -score
           state.data.scoreChange += score
+          state.data.num_deaths += 1
           agentState.isPacman = True
           agentState.configuration = agentState.start
           
@@ -468,6 +469,7 @@ class AgentRules:
           if not state.isOnPacmanTeam(agentIndex):
             score = -score
           state.data.scoreChange += score
+          state.data.num_deaths += 1
           otherAgentState.isPacman = False
           otherAgentState.configuration = otherAgentState.start
           
