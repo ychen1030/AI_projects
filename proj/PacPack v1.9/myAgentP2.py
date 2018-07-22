@@ -26,9 +26,13 @@ from util import nearestPoint
 #########
 
 
-class myAgentP2(myAgentP1):
+class myAgentP2(CaptureAgent):
   """
-  YOUR DESCRIPTION HERE
+  Students' Names: Yingying Chen, Chen Chen
+  Phase Number: 2
+  Description of Bot: Do not consider the foods that teammate
+  will eat unless the bot has eaten all the other foods. Also
+  penalize for stopping.
   """
 
   def registerInitialState(self, gameState):
@@ -60,6 +64,22 @@ class myAgentP2(myAgentP1):
     
     # You can process the broadcast here!
 
+  def chooseAction(self, gameState):
+    """
+    Picks among the actions with the highest Q(s,a).
+    """
+    actions = gameState.getLegalActions(self.index)
+    values = [self.evaluate(gameState, a) for a in actions]
+    return actions[values.index(max(values))]
+
+  def evaluate(self, gameState, action):
+    """
+    Computes a linear combination of features and feature weights
+    """
+    features = self.getFeatures(gameState, action)
+    weights = self.getWeights(gameState, action)
+    return features * weights
+
   def getFeatures(self, gameState, action):
     features = util.Counter()
 
@@ -80,14 +100,13 @@ class myAgentP2(myAgentP1):
     closestFood = min(foodDistances) + 1.0
 
     features['closestFood'] = closestFood
-    features['hasFood'] = gameState.hasFood(newPos[0], newPos[1]) and pos not in self.otherAgentPositions
+    features['hasFood'] = gameState.hasFood(newPos[0], newPos[1]) and newPos not in self.otherAgentPositions
     features['stop'] = 1 if action == Directions.STOP else 0
     return features
 
   def getWeights(self, gameState, action):
     # CHANGE YOUR WEIGHTS HERE
-    return {'numRepeats': 0,
-            'closestFood': -500,
+    return {'closestFood': -500,
             'hasFood': 500000,
             'stop': -1000}
 

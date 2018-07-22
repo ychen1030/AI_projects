@@ -25,7 +25,9 @@ from util import nearestPoint
 #########
 class myAgentP3(CaptureAgent):
   """
-  YOUR DESCRIPTION HERE
+  Students' Names: Yingying Chen, Chen Chen
+  Phase Number: 3
+  Description of Bot:
   """
 
   def registerInitialState(self, gameState):

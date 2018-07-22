@@ -27,7 +27,11 @@ from util import nearestPoint
 
 class myAgentP1(CaptureAgent):
   """
-  YOUR DESCRIPTION HERE
+  Students' Names: Yingying Chen, Chen Chen
+  Phase Number: 1
+  Description of Bot: A large reward for eating a dot, penalize for
+  getting too close to teammate, for stopping, and for far closest
+  dot
   """
 
   def registerInitialState(self, gameState):
@@ -63,8 +67,7 @@ class myAgentP1(CaptureAgent):
     # print 'eval time for agent %d: %.4f' % (self.index, time.time() - start)
 
     # INSERT YOUR LOGIC HERE
-
-    return random.choice(actions)
+    return actions[values.index(max(values))]
 
   def evaluate(self, gameState, action):
     """
