@@ -27,7 +27,10 @@ class myAgentP3(CaptureAgent):
   """
   Students' Names: Yingying Chen, Chen Chen
   Phase Number: 3
-  Description of Bot:
+  Description of Bot: Use feature representation.
+  Reward for closest food, has food, and penalty for
+  being too close to the ghost and being close to the
+  other pacman.
   """
 
   def registerInitialState(self, gameState):
@@ -55,19 +58,78 @@ class myAgentP3(CaptureAgent):
     """
     Picks among actions randomly.
     """
-    teammateActions = self.receivedBroadcast
-    # Process your teammate's broadcast! 
+    # Process your teammate's broadcast!
     # Use it to pick a better action for yourself
 
-    actions = gameState.getLegalActions(self.index)
+    if self.toBroadcast and len(self.toBroadcast) > 0:
+      action = self.toBroadcast.pop(0)
+      if action in gameState.getLegalActions(self.index):
+        ghosts = [gameState.getAgentPosition(ghost) for ghost in gameState.getGhostTeamIndices()]
 
-    filteredActions = actionsWithoutReverse(actionsWithoutStop(actions), gameState, self.index)
+        pacman = gameState.getAgentPosition(self.index)
+        closestGhost = min(self.distancer.getDistance(pacman, ghost) for ghost in ghosts) \
+          if len(ghosts) > 0 else 1.0
 
-    currentAction = random.choice(actions) # Change this!
-    futureActions = None
+        if closestGhost >= 2:
+          return action
+
+    currentAction = self.chooseActionHelper(gameState)
+    futureActions = self.generatePlan(gameState.generateSuccessor(self.index, currentAction), 3)
 
     self.toBroadcast = futureActions
     return currentAction
+
+  def chooseActionHelper(self, state):
+    actions = state.getLegalActions(self.index)
+    filteredActions = actionsWithoutReverse(actionsWithoutStop(actions), state, self.index)
+
+    qValues = [self.evaluate(state, action) for action in filteredActions]
+    return filteredActions[qValues.index(max(qValues))]
+
+  def evaluate(self, gameState, action):
+    features = self.getFeatures(gameState, action)
+    weights = self.getWeights()
+    return features * weights
+
+  def getFeatures(self, state, action):
+    nextState = state.generateSuccessor(self.index, action)
+    newPos = nextState.getAgentPosition(self.index)
+    foods = state.getFood().asList()
+    ghosts = [state.getAgentPosition(ghost) for ghost in state.getGhostTeamIndices()]
+    other = [state.getAgentPosition(other) for other in state.getPacmanTeamIndices() if other != self.index]
+
+    closestFood = min(self.getMazeDistance(newPos, food) for food in foods) + 1.0
+    closestGhost = min(self.getMazeDistance(newPos, ghost) for ghost in ghosts) + 1.0
+    closestPac = self.getMazeDistance(newPos, other[0]) + 1.0
+
+    features = util.Counter()
+    features['closestFood'] = closestFood
+    features['hasFood'] = state.hasFood(newPos[0], newPos[1])
+    features['teammateDistance'] = closestPac
+    features['closeToGhost'] = 1 if closestGhost <= 2 else 0
+    return features
+
+  def getWeights(self):
+    return {'closestFood': -500,
+            'hasFood': 500000,
+            'teammateDistance': 250,
+            'closeToGhost': -200}
+
+  def generatePlan(self, state, plan_length):
+    plan = []
+    other = [other for other in state.getPacmanTeamIndices() if other != self.index]
+    other = other[0]
+    for i in range(plan_length):
+      if self.receivedBroadcast and len(self.receivedBroadcast) > i:
+        action = self.receivedBroadcast[i]
+        if action in state.getLegalActions(other):
+          state = state.generateSuccessor(other, action)
+
+      action = self.chooseActionHelper(state)
+      plan.append(action)
+      state = state.generateSuccessor(self.index, action)
+    return plan
+
 
 def actionsWithoutStop(legalActions):
   """
