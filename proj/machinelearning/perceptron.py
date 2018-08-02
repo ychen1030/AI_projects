@@ -34,6 +34,7 @@ class Perceptron(object):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
+        return -1 if np.dot(x, self.get_weights()) < 0 else 1
 
     def update(self, x, y):
         """
@@ -46,6 +47,11 @@ class Perceptron(object):
             True if the perceptron weights have changed, False otherwise
         """
         "*** YOUR CODE HERE ***"
+        if self.predict(x) == y:
+            return False
+        else:
+            self.weight_vector += y * x
+            return True
 
     def train(self):
         """
@@ -61,3 +67,10 @@ class Perceptron(object):
         graphics in between yielding data points.
         """
         "*** YOUR CODE HERE ***"
+        while True:
+            pass_over = True
+            for x, y in self.get_data_and_monitor(self):
+                if self.update(x, y):
+                    pass_over = False
+            if pass_over:
+                return
