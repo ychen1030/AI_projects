@@ -20,7 +20,7 @@ def main():
     # Let's construct a simple model to approximate a function from 2D
     # points to numbers, f(x) = x_0 * m_0 + x_1 * m_1 + b
     # Here m and b are variables (trainable parameters):
-    m = Variable(2,1)
+    m = Variable(2, 1)
     b = Variable(1)
 
     # We train our network using batch gradient descent on our data
@@ -259,10 +259,12 @@ class Add(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        return np.sum(inputs, axis=0)
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        return [gradient, gradient]
 
 class MatrixMultiply(FunctionNode):
     """
@@ -277,10 +279,12 @@ class MatrixMultiply(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        return np.dot(inputs[0], inputs[1])
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        return [np.dot(gradient, inputs[1].T), np.dot(inputs[0].T, gradient)]
 
 class MatrixVectorAdd(FunctionNode):
     """
@@ -295,10 +299,12 @@ class MatrixVectorAdd(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        return inputs[0] + inputs[1]
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        return [gradient, np.sum(gradient, axis=0)]
 
 class ReLU(FunctionNode):
     """
@@ -313,10 +319,12 @@ class ReLU(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        return np.maximum(inputs[0], np.zeros_like(inputs[0]))
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        return [gradient * np.where(inputs[0] > 0, 1, 0)]
 
 class SquareLoss(FunctionNode):
     """
@@ -333,10 +341,13 @@ class SquareLoss(FunctionNode):
     @staticmethod
     def forward(inputs):
         "*** YOUR CODE HERE ***"
+        return np.mean(np.square(inputs[0] - inputs[1]) * 0.5)
 
     @staticmethod
     def backward(inputs, gradient):
         "*** YOUR CODE HERE ***"
+        derivative = (inputs[0] - inputs[1]) * gradient / inputs[0].size
+        return [derivative, -derivative]
 
 class SoftmaxLoss(FunctionNode):
     """
