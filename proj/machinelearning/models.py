@@ -40,6 +40,11 @@ class RegressionModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.01
+        self.m1 = nn.Variable(1, 200)
+        self.m2 = nn.Variable(200, 1)
+        self.b1 = nn.Variable(200)
+        self.b2 = nn.Variable(1)
 
     def run(self, x, y=None):
         """
@@ -61,6 +66,13 @@ class RegressionModel(Model):
         Note: DO NOT call backprop() or step() inside this method!
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m1, self.b1, self.m2, self.b2])
+        input_x = nn.Input(graph, x)
+        xm1 = nn.MatrixMultiply(graph, input_x, self.m1)
+        xm_plus_b1 = nn.MatrixVectorAdd(graph, xm1, self.b1)
+        rel = nn.ReLU(graph, xm_plus_b1)
+        xm2 = nn.MatrixMultiply(graph, rel, self.m2)
+        xm_plus_b2 = nn.MatrixVectorAdd(graph, xm2, self.b2)
 
         if y is not None:
             # At training time, the correct output `y` is known.
@@ -68,10 +80,14 @@ class RegressionModel(Model):
             # that the node belongs to. The loss node must be the last node
             # added to the graph.
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            nn.SquareLoss(graph, xm_plus_b2, input_y)
+            return graph
         else:
             # At test time, the correct output is unknown.
             # You should instead return your model's prediction as a numpy array
             "*** YOUR CODE HERE ***"
+            return graph.get_output(xm_plus_b2)
 
 class OddRegressionModel(Model):
     """
@@ -89,6 +105,11 @@ class OddRegressionModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.01
+        self.m1 = nn.Variable(1, 200)
+        self.m2 = nn.Variable(200, 1)
+        self.b1 = nn.Variable(200)
+        self.b2 = nn.Variable(1)
 
     def run(self, x, y=None):
         """
@@ -110,6 +131,24 @@ class OddRegressionModel(Model):
         Note: DO NOT call backprop() or step() inside this method!
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m1, self.b1, self.m2, self.b2])
+        input_x = nn.Input(graph, x)
+        xm1 = nn.MatrixMultiply(graph, input_x, self.m1)
+        xm_plus_b1 = nn.MatrixVectorAdd(graph, xm1, self.b1)
+        rel = nn.ReLU(graph, xm_plus_b1)
+        xm2 = nn.MatrixMultiply(graph, rel, self.m2)
+        f = nn.MatrixVectorAdd(graph, xm2, self.b2)
+
+        input_x_neg = nn.Input(graph, -x)
+        xm1_neg = nn.MatrixMultiply(graph, input_x_neg, self.m1)
+        xm_plus_b1_neg = nn.MatrixVectorAdd(graph, xm1_neg, self.b1)
+        rel_neg = nn.ReLU(graph, xm_plus_b1_neg)
+        xm2_neg = nn.MatrixMultiply(graph, rel_neg, self.m2)
+        xm_plus_b2_neg = nn.MatrixVectorAdd(graph, xm2_neg, self.b2)
+
+        minus_one = nn.Input(graph, np.array([[-1.0]]))
+        minus_f = nn.MatrixMultiply(graph, xm_plus_b2_neg, minus_one)
+        lastone = nn.Add(graph, f, minus_f)
 
         if y is not None:
             # At training time, the correct output `y` is known.
@@ -117,10 +156,14 @@ class OddRegressionModel(Model):
             # that the node belongs to. The loss node must be the last node
             # added to the graph.
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            nn.SquareLoss(graph, lastone, input_y)
+            return graph
         else:
             # At test time, the correct output is unknown.
             # You should instead return your model's prediction as a numpy array
             "*** YOUR CODE HERE ***"
+            return graph.get_output(lastone)
 
 class DigitClassificationModel(Model):
     """

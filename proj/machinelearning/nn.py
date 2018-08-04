@@ -144,7 +144,7 @@ class Graph(object):
         """
         "*** YOUR CODE HERE ***"
         self.nodes.append(node)
-        self.output_map[node] = node.forward([self.get_output(parent) for parent in node.get_parents()])
+        self.output_map[node] = node.forward(self.get_inputs(node))
         self.gradient_map[node] = np.zeros_like(self.output_map[node])
 
     def backprop(self):
@@ -164,12 +164,12 @@ class Graph(object):
 
         "*** YOUR CODE HERE ***"
         self.gradient_map[loss_node] = 1.0
-        reversed_nodes = list(reversed(self.get_nodes()))
 
-        for node in reversed_nodes:
+        for node in reversed(self.get_nodes()):
             gradient = node.backward(self.get_inputs(node), self.gradient_map[node])
-            for i in range(len(gradient)):
-                self.gradient_map[node.get_parents()[i]] += gradient[i]
+            parents = node.get_parents()
+            for i in range(len(parents)):
+                self.gradient_map[parents[i]] += gradient[i]
 
     def step(self, step_size):
         """
