@@ -186,6 +186,13 @@ class DigitClassificationModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.5
+        self.m1 = nn.Variable(784, 400)
+        self.m2 = nn.Variable(400, 200)
+        self.m3 = nn.Variable(200, 10)
+        self.b1 = nn.Variable(400)
+        self.b2 = nn.Variable(200)
+        self.b3 = nn.Variable(10)
 
     def run(self, x, y=None):
         """
@@ -210,12 +217,25 @@ class DigitClassificationModel(Model):
             (if y is None) A (batch_size x 10) numpy array of scores (aka logits)
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m1, self.b1, self.m2, self.b2, self.m3, self.b3])
+        input_x = nn.Input(graph, x)
+        xm1 = nn.MatrixMultiply(graph, input_x, self.m1)
+        xm_plus_b1 = nn.MatrixVectorAdd(graph, xm1, self.b1)
+        rel1 = nn.ReLU(graph, xm_plus_b1)
+        xm2 = nn.MatrixMultiply(graph, rel1, self.m2)
+        xm_plus_b2 = nn.MatrixVectorAdd(graph, xm2, self.b2)
+        rel2 = nn.ReLU(graph, xm_plus_b2)
+        xm3 = nn.MatrixMultiply(graph, rel2, self.m3)
+        xm_plus_b3 = nn.MatrixVectorAdd(graph, xm3, self.b3)
 
         if y is not None:
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            nn.SoftmaxLoss(graph, xm_plus_b3, input_y)
+            return graph
         else:
             "*** YOUR CODE HERE ***"
-
+            return graph.get_output(xm_plus_b3)
 
 class DeepQModel(Model):
     """
@@ -235,6 +255,11 @@ class DeepQModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.01
+        self.m1 = nn.Variable(self.state_size, 200)
+        self.m2 = nn.Variable(200, self.num_actions)
+        self.b1 = nn.Variable(200)
+        self.b2 = nn.Variable(self.num_actions)
 
     def run(self, states, Q_target=None):
         """
@@ -262,11 +287,22 @@ class DeepQModel(Model):
                 scores, for the two actions
         """
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m1, self.b1, self.m2, self.b2])
+        input_x = nn.Input(graph, states)
+        xm1 = nn.MatrixMultiply(graph, input_x, self.m1)
+        xm_plus_b1 = nn.MatrixVectorAdd(graph, xm1, self.b1)
+        rel = nn.ReLU(graph, xm_plus_b1)
+        xm2 = nn.MatrixMultiply(graph, rel, self.m2)
+        lastone = nn.MatrixVectorAdd(graph, xm2, self.b2)
 
         if Q_target is not None:
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, Q_target)
+            nn.SquareLoss(graph, lastone, input_y)
+            return graph
         else:
             "*** YOUR CODE HERE ***"
+            return graph.get_output(lastone)
 
     def get_action(self, state, eps):
         """
@@ -307,6 +343,19 @@ class LanguageIDModel(Model):
         # Remember to set self.learning_rate!
         # You may use any learning rate that works well for your architecture
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.01
+        self.hidden_layer = 200
+        self.hidden_layer2 = 400
+
+        self.m0 = nn.Variable(self.num_chars, self.hidden_layer)
+        self.m1 = nn.Variable(self.hidden_layer, self.hidden_layer2)
+        self.m2 = nn.Variable(self.hidden_layer2, self.hidden_layer)
+        self.m3 = nn.Variable(self.hidden_layer, len(self.languages))
+
+        self.b0 = nn.Variable(self.hidden_layer)
+        self.b1 = nn.Variable(self.hidden_layer2)
+        self.b2 = nn.Variable(self.hidden_layer)
+        self.b3 = nn.Variable(len(self.languages))
 
     def run(self, xs, y=None):
         """
@@ -348,8 +397,32 @@ class LanguageIDModel(Model):
         batch_size = xs[0].shape[0]
 
         "*** YOUR CODE HERE ***"
+        graph = nn.Graph([self.m0, self.b0, self.m1, self.b1, self.m2, self.b2, self.m3, self.b3])
+
+        # d sized vector h0
+        batch = np.zeros((batch_size, self.hidden_layer))
+        H0 = nn.Input(graph, batch)
+        H = nn.MatrixVectorAdd(graph, H0, self.b0)
+
+        for x in xs:
+            input_x = nn.Input(graph, x)
+            xm0 = nn.MatrixMultiply(graph, input_x, self.m0)
+            xm0_puls_h = nn.MatrixVectorAdd(graph, H, xm0)
+
+            xm1 = nn.MatrixMultiply(graph, xm0_puls_h, self.m1)
+            xm_plus_b1 = nn.MatrixVectorAdd(graph, xm1, self.b1)
+            rel = nn.ReLU(graph, xm_plus_b1)
+            xm2 = nn.MatrixMultiply(graph, rel, self.m2)
+            H = nn.MatrixVectorAdd(graph, xm2, self.b2)
+
+        last_xm = nn.MatrixMultiply(graph, H, self.m3)
+        lastone = nn.MatrixVectorAdd(graph, last_xm, self.b3)
 
         if y is not None:
             "*** YOUR CODE HERE ***"
+            input_y = nn.Input(graph, y)
+            nn.SoftmaxLoss(graph, lastone, input_y)
+            return graph
         else:
             "*** YOUR CODE HERE ***"
+            return graph.get_output(lastone)
